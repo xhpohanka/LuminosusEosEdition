@@ -6,8 +6,9 @@ import "../../."  // to import EosFaderItem
 
 BlockBase {
     id: root
-    width: 90*10*dp
+    width: (block.attr("numFaders").val)*90*dp
     height: 400*dp
+    settingsComponent: settings
 
     StretchColumn {
         anchors.fill: parent
@@ -16,7 +17,8 @@ BlockBase {
             implicitHeight: -1
 
             Repeater {
-                model: 10
+                id: faderRepeater
+                model: block.attr("numFaders").val
 
                 EosFaderItem {
                     index: modelData
@@ -62,4 +64,24 @@ BlockBase {
         }
 
     }  // end main Column
+
+    Component {
+        id: settings
+        StretchColumn {
+            leftMargin: 15*dp
+            rightMargin: 15*dp
+            defaultSize: 30*dp
+
+            BlockRow {
+                StretchText {
+                    text: "Faders count:"
+                }
+                AttributeNumericInput {
+                    width:  55*dp
+                    implicitWidth: 0
+                    attr: block.attr("numFaders")
+                }
+            }
+        }
+    }  // end Settings Component
 }

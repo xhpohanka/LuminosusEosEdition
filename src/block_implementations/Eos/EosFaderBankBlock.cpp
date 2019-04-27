@@ -8,8 +8,9 @@ EosFaderBankBlock::EosFaderBankBlock(MainController* controller, QString uid)
     , m_bankIndex(QString::number(controller->eosManager()->getNewFaderBankNumber()))
     , m_page(1)
     , m_bankLabel("")
-    , m_faderLabels(10)
-    , m_faderLevels(10)
+    , m_numFaders(this, "numFaders", 10, 1, 24)
+    , m_faderLabels(m_numFaders)
+    , m_faderLevels(m_numFaders)
 {
     connect(m_controller->eosManager(), SIGNAL(connectionEstablished()),
             this, SLOT(onEosConnectionEstablished()));
@@ -17,6 +18,7 @@ EosFaderBankBlock::EosFaderBankBlock(MainController* controller, QString uid)
             this, SLOT(onIncomingEosMessage(EosOSCMessage)));
     connect(controller->eosManager(), SIGNAL(connectionReset()),
             this, SLOT(onConnectionReset()));
+    connect(&m_numFaders, &IntegerAttribute::valueChanged, this, &EosFaderBankBlock::updateFaderCount);
 
     sendConfigMessage();
 }
@@ -39,13 +41,13 @@ void EosFaderBankBlock::setPageFromGui(int value) {
 }
 
 void EosFaderBankBlock::setFaderLabelFromOsc(int faderIndex, QString label) {
-    if (faderIndex < 0 || faderIndex > 9) return;
+    if (faderIndex < 0 || faderIndex > m_numFaders - 1) return;
     m_faderLabels[faderIndex] = label;
     emit faderLabelsChanged();
 }
 
 void EosFaderBankBlock::setFaderLevelFromGui(int faderIndex, qreal value) {
-    if (faderIndex < 0 || faderIndex > 9) return;
+    if (faderIndex < 0 || faderIndex > m_numFaders - 1) return;
     value = limit(0, value, 1);
     m_faderLevels[faderIndex] = value;
     // emitting faderLevelsChanged() not actually neccessary
@@ -58,7 +60,7 @@ void EosFaderBankBlock::setFaderLevelFromGui(int faderIndex, qreal value) {
 }
 
 void EosFaderBankBlock::setFaderLevelFromOsc(int faderIndex, qreal value){
-    if (faderIndex < 0 || faderIndex > 9) return;
+    if (faderIndex < 0 || faderIndex > m_numFaders - 1) return;
     m_faderLevels[faderIndex] = limit(0, value, 1);
     emit faderLevelsChanged();
 }
@@ -109,8 +111,8 @@ void EosFaderBankBlock::onEosConnectionEstablished() {
 
 void EosFaderBankBlock::sendConfigMessage() {
     // send /eos/fader/<index>/config/<page>/10 command:
-    QString message = "/eos/user/1/fader/%1/config/%2/10";
-    message = message.arg(m_bankIndex, QString::number(m_page));
+    QString message = "/eos/user/1/fader/%1/config/%2/%3";
+    message = message.arg(m_bankIndex, QString::number(m_page), QString::number(m_numFaders));
     m_controller->lightingConsole()->sendMessage(message);
 }
 
@@ -157,4 +159,13 @@ int EosFaderBankBlock::getMaxFaderPage() {
     } else {
         return 30;
     }
+}
+
+void EosFaderBankBlock::updateFaderCount() {
+    m_faderLabels.resize(m_numFaders.getValue());
+    m_faderLevels.resize(m_numFaders.getValue());
+
+    sendConfigMessage();
+    m_page = 1;
+    emit pageChanged();
 }

@@ -67,6 +67,8 @@ public slots:
     void sendPageMinusEvent();
     void sendPagePlusEvent();
 
+    void updateFaderCount();
+
 protected slots:
     void onEosConnectionEstablished();
     void sendConfigMessage();
@@ -81,6 +83,8 @@ protected:
 
     int m_page;
     QString m_bankLabel;
+
+    IntegerAttribute m_numFaders;
 
     QVector<QString> m_faderLabels;
     QVector<qreal> m_faderLevels;
