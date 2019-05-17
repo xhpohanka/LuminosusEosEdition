@@ -1,10 +1,11 @@
 #include "EosFaderBankBlock.h"
 
 #include "core/MainController.h"
+#include "core/Nodes.h"
 
 
 EosFaderBankBlock::EosFaderBankBlock(MainController* controller, QString uid)
-    : BlockBase(controller, uid)
+    : OneOutputBlock(controller, uid)
     , m_bankIndex(QString::number(controller->eosManager()->getNewFaderBankNumber()))
     , m_page(1)
     , m_bankLabel("")
@@ -45,6 +46,7 @@ void EosFaderBankBlock::setPageFromGui(int value) {
     emit faderLevelsChanged();
     sendConfigMessage();
     emit pageChanged();
+    setValue(m_page);
 }
 
 void EosFaderBankBlock::setFaderLabelFromOsc(int faderIndex, QString label) {
@@ -179,7 +181,9 @@ void EosFaderBankBlock::onIncomingEosMessage(const EosOSCMessage& msg) {
         int page = msg.stringValue().toInt();
         if (page >= 1 && page <= 100) {
             m_page = page;
+            setValue(m_page);
             emit pageChanged();
+            emit valueChanged();
         }
     } else if (msg.pathPart(3) == "name") {
         // this message contains the label for a specific fader in this bank
@@ -217,7 +221,11 @@ void EosFaderBankBlock::updateFaderCount() {
     m_faderSync.resize(m_numFaders.getValue());
     m_feedbackInvalid.resize(m_numFaders.getValue());
 
-    sendConfigMessage();
     m_page = 1;
+    setValue(m_page);
     emit pageChanged();
+    emit valueChanged();
+    m_outputNode->updateConnectionLines();
+
+    sendConfigMessage();
 }
