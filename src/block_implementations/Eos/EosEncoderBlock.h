@@ -3,6 +3,7 @@
 
 #include "core/block_data/BlockBase.h"
 #include "core/SmartAttribute.h"
+#include "eos_specific/EosOSCMessage.h"
 #include "midi/MidiManager.h"
 
 
@@ -62,6 +63,9 @@ public slots:
     void startLearning();
     void checkIfEventFits(MidiEvent event);
 
+    void onIncomingEosMessage(const EosOSCMessage& msg);
+    void onFeedbackChanged();
+
     // ------------------------- Getter + Setter -----------------------------
 
     int getTarget() const { return m_target; }
@@ -84,6 +88,9 @@ protected:
 
     StringAttribute m_parameterName;
     BoolAttribute m_fineMode;
+    BoolAttribute m_active;
+    BoolAttribute m_accelerate;
+    BoolAttribute m_feedback;
 };
 
 #endif // EOSENCODERBLOCK_H
