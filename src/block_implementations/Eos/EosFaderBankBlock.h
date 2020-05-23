@@ -16,6 +16,7 @@ class EosFaderBankBlock: public OneOutputBlock
     Q_PROPERTY(QString bankLabel READ getBankLabel NOTIFY bankLabelChanged)
     Q_PROPERTY(QList<QString> faderLabels READ getFaderLabels NOTIFY faderLabelsChanged)
     Q_PROPERTY(QList<qreal> faderLevels READ getFaderLevels NOTIFY faderLevelsChanged)
+    Q_PROPERTY(bool feedbackEnabled READ getFeedbackEnabled WRITE setFeedbackEnabled  NOTIFY feedbackEnabledChanged)
 
 public:
 
@@ -44,6 +45,7 @@ signals:
     void bankLabelChanged();
     void faderLabelsChanged();
     void faderLevelsChanged();
+    void feedbackEnabledChanged();
 
 public slots:
     virtual BlockInfo getBlockInfo() const override { return info(); }
@@ -58,6 +60,8 @@ public slots:
     void setFaderLabelFromOsc(int faderIndex, QString label);
 
     QList<qreal> getFaderLevels() const { return m_faderLevels.toList(); }
+    bool getFeedbackEnabled() const { return m_feedbackEnabled; }
+    void setFeedbackEnabled(bool val) { m_feedbackEnabled = val; emit feedbackEnabledChanged(); }
     void setFaderLevel(int faderIndex, qreal value);
     void setFaderLevelFromGui(int faderIndex, qreal value);
     void setFaderLevelFromExt(int faderIndex, qreal value);
@@ -100,6 +104,7 @@ protected:
     BoolAttribute m_catchFaders;
     BoolAttribute m_pageChangeMode;
     QTime m_lastExtTime;
+    BoolAttribute m_feedbackEnabled;
 };
 
 #endif // EOSFADERBANKBLOCK_H
