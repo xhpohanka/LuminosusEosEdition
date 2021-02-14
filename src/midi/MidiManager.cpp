@@ -263,6 +263,7 @@ void MidiManager::refreshInputs() {
                 m_inputPortNames.remove((int) i);
             }
     }
+    bool newInput = false;
     for (int i = 0; i < availablePorts.size(); i++) {
         QString portName = availablePorts[i];
 
@@ -274,7 +275,11 @@ void MidiManager::refreshInputs() {
         m_inputs.push_back(input);
         m_inputPortNames.push_back(portName);
         connect(input, SIGNAL(eventReceived(MidiEvent)), this, SLOT(onExternalEvent(MidiEvent)));
+        newInput = true;
     }
+    if (newInput)
+        emit inputConnected();
+
     emit portNamesChanged();
     delete midiin;
 #endif  // RT_MIDI_AVAILABLE

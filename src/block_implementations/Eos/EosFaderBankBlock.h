@@ -85,6 +85,7 @@ protected slots:
     void sendConfigMessage();
     void onIncomingEosMessage(const EosOSCMessage& msg);
     void onConnectionReset();
+    void onMidiConnected();
 
 private:
     int getMaxFaderPage();

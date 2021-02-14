@@ -300,6 +300,8 @@ signals:
 
     void autoRefreshChanged();
 
+    void inputConnected();
+
 public slots:
 
 	/**

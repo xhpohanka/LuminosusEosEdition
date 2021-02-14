@@ -27,6 +27,8 @@ EosFaderBankBlock::EosFaderBankBlock(MainController* controller, QString uid)
     connect(controller->eosManager(), SIGNAL(connectionReset()),
             this, SLOT(onConnectionReset()));
     connect(&m_numFaders, &IntegerAttribute::valueChanged, this, &EosFaderBankBlock::updateFaderCount);
+    connect(m_controller->midi(), SIGNAL(inputConnected()),
+            this, SLOT(onMidiConnected()));
 
     m_lastExtTime.start();
     sendConfigMessage();
@@ -159,6 +161,11 @@ void EosFaderBankBlock::sendPagePlusEvent() {
 
 void EosFaderBankBlock::onEosConnectionEstablished() {
     sendConfigMessage();
+}
+
+void EosFaderBankBlock::onMidiConnected() {
+    m_faderSync.fill(false);
+    m_externalLevelsValid.fill(false);
 }
 
 void EosFaderBankBlock::sendConfigMessage() {
