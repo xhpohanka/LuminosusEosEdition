@@ -22,18 +22,104 @@ MidiMappingManager::MidiMappingManager(MainController* controller)
     connect(m_midi, SIGNAL(messageReceived(MidiEvent)), this, SLOT(onExternalEvent(MidiEvent)));
 }
 
+QJsonObject MidiMappingManager::h2qj(const QHash<uint32_t, QVector<QString>> &h) const
+{
+    QVariantMap vmap;
+
+    for (auto i = h.cbegin(); i != h.cend(); ++i) {
+        QJsonArray a;
+        for (const auto &v : i.value()) {
+            if (!getControlFromUid(v))
+                continue;
+            a.push_back(v);
+        }
+        if (a.size() > 0) {
+            char key[32];
+            sprintf(key, "0x%06x", i.key());
+
+            vmap.insert(key, a);
+        }
+    }
+
+    return QJsonObject::fromVariantMap(vmap);
+}
+
+QJsonObject MidiMappingManager::h2qj(const QHash<QString, QVector<uint32_t>> &h) const
+{
+    QVariantMap vmap;
+
+    for (auto i = h.cbegin(); i != h.cend(); ++i) {
+        if (!getControlFromUid(i.key()))
+            continue;
+
+        QJsonArray a;
+        for (const auto &v : i.value()) {
+            char key[32];
+            sprintf(key, "0x%06x", v);
+            a.push_back(key);
+        }
+
+        if (a.size() > 0) {
+            vmap.insert(i.key(), a);
+        }
+    }
+
+    return QJsonObject::fromVariantMap(vmap);
+}
+
 QJsonObject MidiMappingManager::getState() const {
     QJsonObject state;
-    state["midiToControl"] = serialize(m_midiToControlMapping);
-    state["controlToFeedback"] = serialize(m_controlToFeedbackMapping);
+
+    state["midiToControl2"] = h2qj(m_midiToControlMappingv2);
+    state["controlToFeedback2"] = h2qj(m_controlToFeedbackMappingv2);
     state["feedbackEnabled"] = getFeedbackEnabled();
     return state;
 }
 
 void MidiMappingManager::setState(const QJsonObject& state) {
-    m_midiToControlMapping = deserialize<QMap<QString, QVector<QString>>>(state["midiToControl"].toString());
-    m_controlToFeedbackMapping = deserialize<QMap<QString, QVector<QString>>>(state["controlToFeedback"].toString());
-    if (!m_controlToFeedbackMapping.isEmpty()) {
+    m_controlToFeedbackMappingv2.clear();
+    m_midiToControlMappingv2.clear();
+
+    if (state["controlToFeedback2"].isUndefined() || state["midiToControl2"].isUndefined()) {
+        auto mtc = deserialize<QMap<QString, QVector<QString>>>(state["midiToControl"].toString());
+        auto ctm = deserialize<QMap<QString, QVector<QString>>>(state["controlToFeedback"].toString());
+
+        for (auto i = ctm.cbegin(); i != ctm.cend(); ++i) {
+            for (const auto &v: qAsConst(i.value())) {
+                auto address = QByteArray::fromBase64(v.toLatin1());
+                uint32_t hexcode = address[0] | address[1] << 8 | address[2] << 16;
+                m_controlToFeedbackMappingv2[i.key()].push_back(hexcode);
+            }
+        }
+
+        for (auto i = mtc.cbegin(); i != mtc.cend(); ++i) {
+            auto address = i.key().toLatin1();
+            int type, channel, target;
+            sscanf(address.constData(), "%03d%03d%03d", &type, &channel, &target);
+            uint32_t hexcode = type | channel << 8 | target << 16;
+            if (i.value().size() > 0)
+                m_midiToControlMappingv2[hexcode] = i.value();
+        }
+
+    }
+    else {
+        auto ctf = state["controlToFeedback2"].toObject().toVariantMap();
+        for (auto i = ctf.cbegin(); i != ctf.cend(); ++i) {
+            for (const auto &v : i.value().toList()) {
+                m_controlToFeedbackMappingv2[i.key()].push_back(v.toString().toInt(nullptr, 0));
+            }
+        }
+
+        auto mtc = state["midiToControl2"].toObject().toVariantMap();
+        for (auto i = mtc.cbegin(); i != mtc.cend(); ++i) {
+            auto key = i.key().toInt(nullptr, 0);
+            for (const auto &v : i.value().toList()) {
+                m_midiToControlMappingv2[key].push_back(v.toString());
+            }
+        }
+    }
+
+    if (!m_controlToFeedbackMappingv2.isEmpty()) {
         setFeedbackEnabled(state["feedbackEnabled"].toBool());
     }
 }
@@ -120,16 +206,15 @@ void MidiMappingManager::guiControlHasBeenTouched(QString controllerUid) {
 
 void MidiMappingManager::sendFeedback(QString uid, double value) const {
     if (!m_feedbackEnabled) return;
-    if (m_controlToFeedbackMapping.contains(uid)) {
-        for (QString feedbackAddress: m_controlToFeedbackMapping[uid]) {
-            m_midi->sendFeedback(feedbackAddress, value);
-        }
+
+    for (const auto &feedbackAddress: m_controlToFeedbackMappingv2.value(uid, QVector<uint32_t>())) {
+        m_midi->sendFeedback(feedbackAddress, value);
     }
 }
 
 void MidiMappingManager::clearMapping() {
-    m_midiToControlMapping.clear();
-    m_controlToFeedbackMapping.clear();
+    m_midiToControlMappingv2.clear();
+    m_controlToFeedbackMappingv2.clear();
 }
 
 // ---------------------- private -------------------------
@@ -142,36 +227,39 @@ void MidiMappingManager::mapWaitingControlToMidi(const MidiEvent& event) {
 
 void MidiMappingManager::mapControlToMidi(QString controlUid, const MidiEvent& event) {
     // append control uid to list if not already existing:
-    if (!m_midiToControlMapping[event.inputId].contains(controlUid)) {
-        m_midiToControlMapping[event.inputId].append(controlUid);
+    if (!m_midiToControlMappingv2[event.GetId()].contains(controlUid)) {
+        m_midiToControlMappingv2[event.GetId()].append(controlUid);
     }
     if (m_connectFeedback) {
-        const QString feedbackAddress = m_midi->getFeedbackAddress(event.type, event.channel, event.target);
-        if (!m_controlToFeedbackMapping[controlUid].contains(feedbackAddress)) {
-            m_controlToFeedbackMapping[controlUid].append(feedbackAddress);
+        auto id = event.GetId();
+        if (!m_controlToFeedbackMappingv2[controlUid].contains(id)) {
+            m_controlToFeedbackMappingv2[controlUid].append(id);
         }
     }
 }
 
 void MidiMappingManager::releaseMapping(QString controlUid) {
-    for (auto& controlList: m_midiToControlMapping) {
+    for (auto& controlList: m_midiToControlMappingv2) {
         controlList.removeAll(controlUid);
     }
-    m_controlToFeedbackMapping.remove(controlUid);
+    m_controlToFeedbackMappingv2.remove(controlUid);
 }
 
 void MidiMappingManager::releaseMapping(const MidiEvent& event) {
-    m_midiToControlMapping.remove(event.inputId);
-    const QString feedbackAddress = m_midi->getFeedbackAddress(event.type, event.channel, event.target);
-    for (auto& feedbackAddressList: m_controlToFeedbackMapping) {
-        feedbackAddressList.removeAll(feedbackAddress);
+    m_midiToControlMappingv2.remove(event.GetId());
+
+    auto id = event.GetId();
+    for (auto& feedbackAddressList: m_controlToFeedbackMappingv2) {
+        feedbackAddressList.removeAll(id);
     }
 }
 
 void MidiMappingManager::onExternalEvent(const MidiEvent& event) const {
     // set "externalInput" property on controls that are mapped to this input:
-    if (m_midiToControlMapping.contains(event.inputId)) {
-        for (QString controlUid: m_midiToControlMapping[event.inputId]) {
+
+    auto id = event.GetId();
+    if (m_midiToControlMappingv2.contains(id)) {
+        for (const auto &controlUid: m_midiToControlMappingv2[id]) {
             QQuickItem* control = getControlFromUid(controlUid);
             // check if control still exists:
             if (!control) continue;

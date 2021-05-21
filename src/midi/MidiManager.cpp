@@ -504,6 +504,14 @@ QString MidiManager::getFeedbackAddress(unsigned char type, unsigned char channe
     return QString(address.toBase64());
 }
 
+void MidiManager::sendFeedback(uint32_t addressId, double value) {
+    unsigned char type = addressId & 0xff;
+    unsigned char channel = (addressId >> 8) & 0xff;
+    unsigned char target = (addressId >> 16) & 0xff;
+
+    sendChannelVoiceMessage(type, channel, target, value);
+}
+
 void MidiManager::sendFeedback(QString addressString, double value) {
     QByteArray address = QByteArray::fromBase64(addressString.toLatin1());
 
@@ -517,7 +525,7 @@ void MidiManager::sendFeedback(QString addressString, double value) {
 void MidiManager::onExternalEvent(MidiEvent event) {
     // call nextEvent callback if there is one:
     if (!m_nextEventCallbacks.isEmpty()) {
-        for (auto callback: m_nextEventCallbacks) {
+        for (const auto &callback: m_nextEventCallbacks) {
             callback(event);
         }
         m_nextEventCallbacks.clear();

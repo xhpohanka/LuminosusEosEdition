@@ -19,6 +19,9 @@ class MidiMappingManager : public QObject
 
     Q_PROPERTY(bool feedbackEnabled READ getFeedbackEnabled WRITE setFeedbackEnabled NOTIFY feedbackEnabledChanged)
 
+    QJsonObject h2qj(const QHash<QString, QVector<uint32_t>> &h) const;
+    QJsonObject h2qj(const QHash<uint32_t, QVector<QString>> &h) const;
+
 public:
 
     explicit MidiMappingManager(MainController* controller);
@@ -198,12 +201,12 @@ protected:
     /**
      * @brief m_midiToControlMapping the mapping of Midi events to controlUids
      */
-    QMap<QString, QVector<QString>> m_midiToControlMapping;
+    QHash<uint32_t, QVector<QString>> m_midiToControlMappingv2;
 
     /**
      * @brief m_controlToFeedbackMapping the mapping of controlUids to feedback addresses
      */
-    QMap<QString, QVector<QString>> m_controlToFeedbackMapping;
+    QHash<QString, QVector<uint32_t>> m_controlToFeedbackMappingv2;
 };
 
 #endif // MIDIMAPPINGMANAGER_H

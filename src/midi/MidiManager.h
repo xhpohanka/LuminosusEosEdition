@@ -80,6 +80,10 @@ struct MidiEvent {
      * @return a new Midi Event object
      */
     static MidiEvent FromRawMessage(QString /*portname*/, std::vector<unsigned char>* message);
+
+    uint32_t GetId() const {
+        return type | channel << 8 | target << 16;
+    }
 };
 
 
@@ -365,6 +369,7 @@ public slots:
     QString getFeedbackAddress(unsigned char type, unsigned char channel, unsigned char target) const;
 
     void sendFeedback(QString addressString, double value);
+    void sendFeedback(uint32_t addressId, double value);
 
     /**
      * @brief onExternalEvent handles an incoming input event and calls associated callbacks
