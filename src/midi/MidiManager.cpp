@@ -307,7 +307,7 @@ void MidiManager::refreshOutputs() {
 
         // ignore blacklisted ports:
         bool blacklisted = false;
-        for (QString blacklistedName: m_portNameBlacklist) {
+        for (QString &blacklistedName: m_portNameBlacklist) {
             if (portName.startsWith(blacklistedName)) {
                 blacklisted = true;
                 break;

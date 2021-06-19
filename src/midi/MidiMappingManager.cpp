@@ -255,15 +255,13 @@ void MidiMappingManager::releaseMapping(const MidiEvent& event) {
 }
 
 void MidiMappingManager::onExternalEvent(const MidiEvent& event) const {
-    // set "externalInput" property on controls that are mapped to this input:
-
     auto id = event.GetId();
-    if (m_midiToControlMappingv2.contains(id)) {
-        for (const auto &controlUid: m_midiToControlMappingv2[id]) {
-            QQuickItem* control = getControlFromUid(controlUid);
-            // check if control still exists:
-            if (!control) continue;
-            control->setProperty("externalInput", event.value);
-        }
+
+    for (const auto &controlUid: m_midiToControlMappingv2.value(id, QVector<QString>())) {
+        QQuickItem* control = getControlFromUid(controlUid);
+        // check if control still exists:
+        if (!control)
+            continue;
+        control->setProperty("externalInput", event.value);
     }
 }
