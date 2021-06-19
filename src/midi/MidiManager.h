@@ -365,6 +365,7 @@ public slots:
 	 * @param target first argument of the message (i.e. program)
 	 */
 	void sendChannelVoiceMessage(unsigned char type, unsigned char channel, unsigned char target);
+    void sendChannelVoiceMessage(const std::vector<uint8_t> &message);
 
     QString getFeedbackAddress(unsigned char type, unsigned char channel, unsigned char target) const;
 

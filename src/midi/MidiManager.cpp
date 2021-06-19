@@ -495,6 +495,19 @@ void MidiManager::sendChannelVoiceMessage(unsigned char type, unsigned char chan
 #endif
 }
 
+void MidiManager::sendChannelVoiceMessage(const std::vector<uint8_t> &message) {
+#ifdef RT_MIDI_AVAILABLE
+    for (RtMidiOut* output: m_outputs) {
+        try {
+            output->sendMessage(&message);
+        } catch ( RtMidiError& ) {
+            qWarning("MIDI device not available (probably disconnect).");
+            output->closePort();
+        }
+    }
+#endif
+}
+
 QString MidiManager::getFeedbackAddress(unsigned char type, unsigned char channel, unsigned char target) const {
     QByteArray address;
     address.append(type);
