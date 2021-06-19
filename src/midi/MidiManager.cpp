@@ -23,33 +23,41 @@
 
 
 MidiEvent MidiEvent::FromRawMessage(QString /*portName*/, std::vector<unsigned char>* message) {
-	if (message->size() < 2) {
-		// data is too short, return empty event:
-		return MidiEvent {"", 0, 0, 0, 0, false};
-	}
+    if (message->size() < 2) {
+        // data is too short, return empty event:
+        return MidiEvent {"", 0, 0, 0, 0, false};
+    }
 
-	// split message in type, channel, target and value:
-	// (target is the Note key or the ControlChange target)
-	int status = message->at(0);
-	int channel = (status & 0x0f) + 1;
-	int type = (status & 0xf0) >> 4;
-	int target = message->at(1);
+    // split message in type, channel, target and value:
+    // (target is the Note key or the ControlChange target)
+    int status = message->at(0);
+    int channel = (status & 0x0f) + 1;
+    int type = (status & 0xf0) >> 4;
+    int target = message->at(1);
 
-	// get value depending on type:
-	double value;
-	bool convertedFromNoteOff = false;
-	if (type == MidiConstants::PROGRAM_CHANGE) {
-		// Program Change doesn't have value, use program number as value:
-		value = 1.0;
-	} else if (type == MidiConstants::NOTE_OFF) {
-		// convert note_off to note_on with value 0:
-		type = MidiConstants::NOTE_ON;
-		value = 0.0;
-		convertedFromNoteOff = true;
-	} else {
-		// value is the last bytes last 7 bits:
-		value = message->at(2) / 127.;
-	}
+    // get value depending on type:
+    double value;
+    bool convertedFromNoteOff = false;
+    switch (type) {
+    case MidiConstants::PROGRAM_CHANGE:
+        // Program Change doesn't have value, use program number as value:
+        value = 1.0;
+
+        break;
+    case MidiConstants::NOTE_OFF:
+        // convert note_off to note_on with value 0:
+        type = MidiConstants::NOTE_ON;
+        value = 0.0;
+        convertedFromNoteOff = true;
+
+        break;
+    case 0xE:
+        value = (message->at(2) << 7 | target) / 16383.;
+        break;
+    default:
+        // value is the last bytes last 7 bits:
+        value = message->at(2) / 127.;
+    }
 
     // create inputId from status and target:
 
@@ -60,8 +68,8 @@ MidiEvent MidiEvent::FromRawMessage(QString /*portName*/, std::vector<unsigned c
     //inputId = inputId.arg(portName);
     // -> don't include port name because it changes by the count of connected devices
 
-	MidiEvent event{inputId, value, type, channel, target, convertedFromNoteOff};
-	return event;
+    MidiEvent event{inputId, value, type, channel, target, convertedFromNoteOff};
+    return event;
 }
 
 // The following code will only be used when the RtMidi library is available on the platform.
@@ -461,8 +469,15 @@ void MidiManager::sendChannelVoiceMessage(unsigned char type, unsigned char chan
 #ifdef RT_MIDI_AVAILABLE
     static std::vector<unsigned char> message(3);
 	message[0] = (type << 4) | (channel - 1);
-	message[1] = target;
-    message[2] = static_cast<unsigned char>(value * 127);
+    if (type == 0xE) {
+        message[1] = static_cast<unsigned char>(int(value * 16383) & 0x7f);
+        message[2] = static_cast<unsigned char>(int(value * 16383) >> 7);
+
+    }
+    else {
+        message[1] = target;
+        message[2] = static_cast<unsigned char>(value * 127);
+    }
 	for (RtMidiOut* output: m_outputs) {
         try {
             output->sendMessage(&message);
