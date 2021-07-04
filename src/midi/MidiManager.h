@@ -82,7 +82,10 @@ struct MidiEvent {
     static MidiEvent FromRawMessage(QString /*portname*/, std::vector<unsigned char>* message);
 
     uint32_t GetId() const {
-        return type | channel << 8 | target << 16;
+        if (type != 0xe)
+            return type | channel << 8 | target << 16;
+        else
+            return type | channel << 8 | 0 << 16;
     }
 };
 
