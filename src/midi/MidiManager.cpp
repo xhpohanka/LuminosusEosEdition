@@ -52,7 +52,7 @@ MidiEvent MidiEvent::FromRawMessage(QString /*portName*/, std::vector<unsigned c
 
         break;
     case 0xE:
-        value = (message->at(2) << 7 | target) / 16383.;
+        value = message[2] / 127. + message[1] / 127. / 127.;
         break;
     default:
         // value is the last bytes last 7 bits:
@@ -470,9 +470,10 @@ void MidiManager::sendChannelVoiceMessage(unsigned char type, unsigned char chan
     static std::vector<unsigned char> message(3);
 	message[0] = (type << 4) | (channel - 1);
     if (type == 0xE) {
-        message[1] = static_cast<unsigned char>(int(value * 16383) & 0x7f);
-        message[2] = static_cast<unsigned char>(int(value * 16383) >> 7);
-
+        int v = int(value * 0x7f * 0x7f);
+        message[1] = static_cast<unsigned char>(v % 0x7f);
+        message[2] = static_cast<unsigned char>(v / 0x7f);
+        target = message[1];
     }
     else {
         message[1] = target;
