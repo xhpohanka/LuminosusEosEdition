@@ -8,6 +8,7 @@ EosFaderBankBlock::EosFaderBankBlock(MainController* controller, QString uid)
     : OneOutputBlock(controller, uid)
     , m_bankIndex(QString::number(controller->eosManager()->getNewFaderBankNumber()))
     , m_page(1)
+    , m_eosVersion(0)
     , m_bankLabel("")
     , m_numFaders(this, "numFaders", 10, 1, 24)
     , m_faderLabels(m_numFaders)
@@ -55,10 +56,12 @@ void EosFaderBankBlock::setPageFromGui(int value) {
 void EosFaderBankBlock::setFaderLabelFromOsc(int faderIndex, QString label) {
     if (faderIndex < 0 || faderIndex > m_numFaders - 1) return;
     m_faderLabels[faderIndex] = label;
-    if (label == "Global FX" || label == "Man Time")
-        m_feedbackInvalid[faderIndex] = true;
-    else
-        m_feedbackInvalid[faderIndex] = false;
+    m_feedbackInvalid[faderIndex] = false;
+    if (m_eosVersion < 31) {
+        if (label == "Global FX" || label == "Man Time")
+            m_feedbackInvalid[faderIndex] = true;
+    }
+
     emit faderLabelsChanged();
 }
 
@@ -160,6 +163,17 @@ void EosFaderBankBlock::sendPagePlusEvent() {
 
 void EosFaderBankBlock::onEosConnectionEstablished() {
     sendConfigMessage();
+
+    QString eosVersion = m_controller->eosManager()->getConsoleVersion();
+    if (eosVersion.startsWith("2.4.")) {
+        m_eosVersion = 24;
+    }
+    else if (eosVersion.startsWith("3.0.")) {
+        m_eosVersion = 30;
+    }
+    else if (eosVersion.startsWith("3.1.")) {
+        m_eosVersion = 31;
+    }
 }
 
 void EosFaderBankBlock::onMidiConnected() {
@@ -212,8 +226,7 @@ void EosFaderBankBlock::onConnectionReset() {
 }
 
 int EosFaderBankBlock::getMaxFaderPage() {
-    QString eosVersion = m_controller->eosManager()->getConsoleVersion();
-    if (eosVersion.startsWith("2.4.")) {
+    if (m_eosVersion > 23) {
         return 100;
     } else {
         return 30;

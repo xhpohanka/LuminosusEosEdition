@@ -53,6 +53,7 @@ BlockBase {
                     width: 40*dp
                     minimumValue: 1
                     maximumValue: 30
+                    maximumValue: 100
                     value: block.page
                     onValueChanged: {
                         if (value !== block.page) {

@@ -94,6 +94,7 @@ protected:
     const QString m_bankIndex;
 
     int m_page;
+    int m_eosVersion;
     QString m_bankLabel;
 
     IntegerAttribute m_numFaders;
