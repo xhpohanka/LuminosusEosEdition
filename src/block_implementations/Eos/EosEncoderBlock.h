@@ -91,7 +91,7 @@ protected:
 
     StringAttribute m_parameterName;
     BoolAttribute m_fineMode;
-    BoolAttribute m_active;
+    IntegerAttribute m_mode;
     BoolAttribute m_accelerate;
     BoolAttribute m_feedbackEnabled;
 };

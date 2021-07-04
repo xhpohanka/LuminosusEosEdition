@@ -12,7 +12,7 @@ EosEncoderBlock::EosEncoderBlock(MainController* controller, QString uid)
     , m_learning(false)
     , m_parameterName(this, "parameterName", "pan")
     , m_fineMode(this, "fineMode", false, /*persistent*/ false)
-    , m_active(this, "active", false, true)
+    , m_mode(this, "mode", 0)
     , m_accelerate(this, "accelerate", true, true)
     , m_feedbackEnabled(this, "feedback", true, true)
 {
@@ -54,10 +54,17 @@ void EosEncoderBlock::onMidiMessage(MidiEvent event) {
                 relativeValue = (qAbs(relativeValue) > 1) ? relativeValue * 2 : relativeValue;
 
             QString message;
-            if (!m_active)
-                message = m_fineMode ? "/eos/user/1/wheel/fine/%1" : "/eos/user/1/wheel/coarse/%1";
-            else
+            switch (m_mode) {
+            case 1:
                 message = m_fineMode ? "/eos/active/wheel/fine/%1" : "/eos/active/wheel/coarse/%1";
+                break;
+            case 2:
+                message = "/eos/wheel/level/%1";
+                break;
+            default:
+                message = m_fineMode ? "/eos/user/1/wheel/fine/%1" : "/eos/user/1/wheel/coarse/%1";
+                break;
+            }
 
             message = message.arg(m_parameterName);
             m_controller->lightingConsole()->sendMessage(message, relativeValue);

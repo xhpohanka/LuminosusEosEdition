@@ -104,18 +104,7 @@ BlockBase {
             }
 
             BlockRow {
-                Text {
-                    text: "active:"
-                    width: parent.width - 30*dp
-                }
-                AttributeCheckbox {
-                    width: 30*dp
-                    attr: block.attr("active")
-                }
-            }
-
-            BlockRow {
-                visible: block.attr("active").val === true
+                visible: block.attr("mode").val === 1
                 Text {
                     text: "feedback:"
                     width: parent.width - 30*dp
@@ -126,7 +115,14 @@ BlockBase {
                 }
             }
 
-
+            BlockRow {
+                AttributeCombobox {
+                    width: 30*dp
+                    attr: block.attr("mode")
+                    values: [0, 1, 2]
+                    texts: ["normal", "active", "level"]
+                }
+            }
         }
     }  // end Settings Component
 }
