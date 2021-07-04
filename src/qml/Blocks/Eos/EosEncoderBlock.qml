@@ -104,6 +104,17 @@ BlockBase {
             }
 
             BlockRow {
+                Text {
+                    text: "MCU:"
+                    width: parent.width - 30*dp
+                }
+                AttributeCheckbox {
+                    width: 30*dp
+                    attr: block.attr("mcu")
+                }
+            }
+
+            BlockRow {
                 visible: block.attr("mode").val === 1
                 Text {
                     text: "feedback:"

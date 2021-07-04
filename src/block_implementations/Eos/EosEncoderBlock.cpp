@@ -15,6 +15,7 @@ EosEncoderBlock::EosEncoderBlock(MainController* controller, QString uid)
     , m_mode(this, "mode", 0)
     , m_accelerate(this, "accelerate", true, true)
     , m_feedbackEnabled(this, "feedback", true, true)
+    , m_mcu(this, "mcu", false, true)
 {
     connect(m_controller->midi(), SIGNAL(messageReceived(MidiEvent)), this, SLOT(onMidiMessage(MidiEvent)));
     connect(&m_feedbackEnabled, SIGNAL(valueChanged()), this, SLOT(onFeedbackEnabledChanged()));
@@ -45,10 +46,18 @@ void EosEncoderBlock::onMidiMessage(MidiEvent event) {
             // channel and target are correct
             // set value:
             double relativeValue = event.value * 127.0;
-            if (relativeValue > 64) {
-                // value is 7-bit twos complement
-                relativeValue -= 128;
+            if (m_mcu) {
+                if (relativeValue > 64) {
+                    relativeValue = -(relativeValue - 64);
+                }
+
+            } else {
+                if (relativeValue > 64) {
+                    // value is 7-bit twos complement
+                    relativeValue -= 128;
+                }
             }
+
             // accelerate:
             if (m_accelerate)
                 relativeValue = (qAbs(relativeValue) > 1) ? relativeValue * 2 : relativeValue;

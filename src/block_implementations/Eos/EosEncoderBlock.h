@@ -94,6 +94,7 @@ protected:
     IntegerAttribute m_mode;
     BoolAttribute m_accelerate;
     BoolAttribute m_feedbackEnabled;
+    BoolAttribute m_mcu;
 };
 
 #endif // EOSENCODERBLOCK_H
