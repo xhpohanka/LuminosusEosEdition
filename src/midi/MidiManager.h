@@ -79,7 +79,7 @@ struct MidiEvent {
      * @param message raw data of the message
      * @return a new Midi Event object
      */
-    static MidiEvent FromRawMessage(QString /*portname*/, std::vector<unsigned char>* message);
+    static MidiEvent FromRawMessage(QString /*portname*/, const std::vector<unsigned char> &message);
 
     uint32_t GetId() const {
         if (type != 0xe)
@@ -164,7 +164,7 @@ public:
 	 * and emits the eventReceived signal
 	 * @param message is the raw Midi data
 	 */
-    void rawMidiCallback(std::vector<unsigned char>* message);
+    void rawMidiCallback(const std::vector<unsigned char> &message);
 
     /**
      * @brief getPortName returns the port name

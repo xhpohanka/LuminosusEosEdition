@@ -22,18 +22,18 @@
 #include "core/MainController.h"
 
 
-MidiEvent MidiEvent::FromRawMessage(QString /*portName*/, std::vector<unsigned char>* message) {
-    if (message->size() < 2) {
+MidiEvent MidiEvent::FromRawMessage(QString /*portName*/, const std::vector<unsigned char> &message) {
+    if (message.size() < 2) {
         // data is too short, return empty event:
         return MidiEvent {"", 0, 0, 0, 0, false};
     }
 
     // split message in type, channel, target and value:
     // (target is the Note key or the ControlChange target)
-    int status = message->at(0);
+    int status = message[0];
     int channel = (status & 0x0f) + 1;
     int type = (status & 0xf0) >> 4;
-    int target = message->at(1);
+    int target = message[1];
 
     // get value depending on type:
     double value;
@@ -56,7 +56,7 @@ MidiEvent MidiEvent::FromRawMessage(QString /*portName*/, std::vector<unsigned c
         break;
     default:
         // value is the last bytes last 7 bits:
-        value = message->at(2) / 127.;
+        value = message[2] / 127.;
     }
 
     // create inputId from status and target:
@@ -121,13 +121,14 @@ MidiInputDevice::~MidiInputDevice() {
 
 void MidiInputDevice::staticMidiCallback(double, std::vector<unsigned char>* message, void* instance) {
 	// forward call to non-static method just for convenience:
+    const std::vector<unsigned char> &message_ref = *message;
     MidiInputDevice* device = static_cast<MidiInputDevice*>(instance);
     if (device) {
-        device->rawMidiCallback(message);
+        device->rawMidiCallback(message_ref);
     }
 }
 
-void MidiInputDevice::rawMidiCallback(std::vector<unsigned char> *message) {
+void MidiInputDevice::rawMidiCallback(const std::vector<unsigned char> &message) {
 	MidiEvent event = MidiEvent::FromRawMessage(m_portName, message);
     emit eventReceived(event);
 }
