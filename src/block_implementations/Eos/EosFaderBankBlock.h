@@ -75,6 +75,7 @@ public slots:
     void sendUnloadEvent(int faderIndex);
     void sendStopEvent(int faderIndex, bool value);
     void sendFireEvent(int faderIndex, bool value);
+    void sendBlEvent(bool value);
 
     void sendPageMinusEvent();
     void sendPagePlusEvent();

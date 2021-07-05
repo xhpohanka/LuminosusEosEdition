@@ -11,6 +11,13 @@ StretchColumn {
     property int index
     property bool feedbackEnabled: true
 
+    function is_gm(s) {
+        var patt = /^GM( \(BO\))?/;
+        return patt.test(s)
+    }
+
+    property bool grandmaster: is_gm(block.faderLabels[index])
+
     Text {
         height: 40*dp
         text: block.faderLabels[index]
@@ -61,6 +68,7 @@ StretchColumn {
         feedbackEnabled: parent.feedbackEnabled
     }
     PushButton {
+        id: stopButton
         implicitHeight: 0  // do not stretch
         height: 40*dp
         onActiveChanged: {
@@ -68,10 +76,9 @@ StretchColumn {
                 if (active)
                     block.setPageFromGui(index + 1)
             }
-            else {
+            else if (!grandmaster) {
                 block.sendStopEvent(index, active)
             }
-
         }
 
         showLed: false
@@ -87,7 +94,16 @@ StretchColumn {
     PushButton {
         implicitHeight: 0  // do not stretch
         height: 40*dp
-        onActiveChanged: block.sendFireEvent(index, active)
+        toggle: grandmaster
+        onActiveChanged: {
+            if (grandmaster) {
+                if (stopButton.active)
+                    block.sendBlEvent(1)
+            }
+            else {
+                block.sendFireEvent(index, active)
+            }
+        }
         showLed: false
         mappingID: block.getUid() + "go" + modelData
         Image {

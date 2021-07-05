@@ -156,6 +156,11 @@ void EosFaderBankBlock::sendFireEvent(int faderIndex, bool value) {
     m_controller->lightingConsole()->sendMessage(message, value ? 1.0 : 0.0);
 }
 
+void EosFaderBankBlock::sendBlEvent(bool value) {
+    QString message = "/eos/user/1/key/blackout";
+    m_controller->lightingConsole()->sendMessage(message, value ? 1.0 : 0.0);
+}
+
 void EosFaderBankBlock::sendPageMinusEvent() {
     if (m_page == 1) {
         setPageFromGui(getMaxFaderPage());
