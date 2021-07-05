@@ -38,15 +38,9 @@ BlockBase {
                 anchors.rightMargin: 15*dp
 
                 ButtonBottomLine {
+                    id: pageChangeMode
                     width: 80*dp
                     text: "Page:"
-                    onActiveChanged: {
-                        if (active) {
-                            block.attr("pageChangeMode").val = true
-                        } else {
-                            block.attr("pageChangeMode").val = false
-                        }
-                    }
                     mappingID: block.getUid() + "pageChange"
                 }
                 ButtonBottomLine {

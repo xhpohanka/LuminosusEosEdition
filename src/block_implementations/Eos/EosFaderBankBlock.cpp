@@ -17,7 +17,6 @@ EosFaderBankBlock::EosFaderBankBlock(MainController* controller, QString uid)
     , m_faderSync(m_numFaders, false)
     , m_feedbackInvalid(m_numFaders, false)
     , m_catchFaders(this, "catchFaders", true)
-    , m_pageChangeMode(this, "pageChangeMode", false, false)
     , m_feedbackEnabled(this, "feedbackEnabled", true)
 {
     connect(m_controller->eosManager(), SIGNAL(connectionEstablished()),

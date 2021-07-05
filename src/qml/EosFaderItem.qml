@@ -64,7 +64,7 @@ StretchColumn {
         implicitHeight: 0  // do not stretch
         height: 40*dp
         onActiveChanged: {
-            if (block.attr("pageChangeMode").val === true) {
+            if (pageChangeMode.active) {
                 if (active)
                     block.setPageFromGui(index + 1)
             }

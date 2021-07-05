@@ -106,7 +106,6 @@ protected:
     QVector<bool> m_feedbackInvalid;
 
     BoolAttribute m_catchFaders;
-    BoolAttribute m_pageChangeMode;
     QTime m_lastExtTime;
     BoolAttribute m_feedbackEnabled;
 };
