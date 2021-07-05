@@ -2,6 +2,7 @@
 #define EOSFADERBANKBLOCK_H
 
 #include <QDateTime>
+#include <QElapsedTimer>
 #include "core/block_data/BlockBase.h"
 #include "eos_specific/EosOSCMessage.h"
 #include "core/block_data/OneOutputBlock.h"
@@ -107,7 +108,8 @@ protected:
     QVector<bool> m_feedbackInvalid;
 
     BoolAttribute m_catchFaders;
-    QTime m_lastExtTime;
+    QVector<QElapsedTimer> m_lastExtTime;
+    QVector<QElapsedTimer> m_lastOscTime;
     BoolAttribute m_feedbackEnabled;
 };
 

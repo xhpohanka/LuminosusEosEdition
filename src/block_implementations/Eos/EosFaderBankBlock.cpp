@@ -18,6 +18,8 @@ EosFaderBankBlock::EosFaderBankBlock(MainController* controller, QString uid)
     , m_faderSync(m_numFaders, false)
     , m_feedbackInvalid(m_numFaders, false)
     , m_catchFaders(this, "catchFaders", true)
+    , m_lastExtTime(m_numFaders)
+    , m_lastOscTime(m_numFaders)
     , m_feedbackEnabled(this, "feedbackEnabled", true)
 {
     connect(m_controller->eosManager(), SIGNAL(connectionEstablished()),
@@ -30,7 +32,6 @@ EosFaderBankBlock::EosFaderBankBlock(MainController* controller, QString uid)
     connect(m_controller->midi(), SIGNAL(inputConnected()),
             this, SLOT(onMidiConnected()));
 
-    m_lastExtTime.start();
     sendConfigMessage();
 }
 
@@ -74,6 +75,7 @@ void EosFaderBankBlock::setFaderLevel(int faderIndex, qreal value) {
     QString message = "/eos/user/1/fader/%1/%2";
     message = message.arg(m_bankIndex, QString::number(faderIndex + 1));
     m_controller->lightingConsole()->sendMessage(message, value);
+    m_lastOscTime[faderIndex].restart();
 }
 
 void EosFaderBankBlock::setFaderLevelFromGui(int faderIndex, qreal value) {
@@ -85,14 +87,15 @@ void EosFaderBankBlock::setFaderLevelFromGui(int faderIndex, qreal value) {
 }
 
 void EosFaderBankBlock::setFaderLevelFromExt(int faderIndex, qreal value) {
+    const double thresh = 1.0/1024; // we support 10bit resolution at best (mackie control)
     if (m_catchFaders) {
         if (!m_faderSync[faderIndex]) {
             if (m_externalLevelsValid[faderIndex]) {
-                if ((m_externalLevels[faderIndex] <= m_faderLevels[faderIndex] && (value + 0.01) >= m_faderLevels[faderIndex])
-                        || (m_externalLevels[faderIndex] >= m_faderLevels[faderIndex] && (value - 0.01) <= m_faderLevels[faderIndex]))
+                if ((m_externalLevels[faderIndex] <= m_faderLevels[faderIndex] && (value + thresh) >= m_faderLevels[faderIndex])
+                        || (m_externalLevels[faderIndex] >= m_faderLevels[faderIndex] && (value - thresh) <= m_faderLevels[faderIndex]))
                     m_faderSync[faderIndex] = true;
             }
-            if (abs(value - m_faderLevels[faderIndex]) < 0.02) {
+            if (abs(value - m_faderLevels[faderIndex]) < thresh * 2) {
                 m_faderSync[faderIndex] = true;
             }
         }
@@ -104,7 +107,7 @@ void EosFaderBankBlock::setFaderLevelFromExt(int faderIndex, qreal value) {
     }
 
     setFaderLevel(faderIndex, value);
-    m_lastExtTime.restart();
+    m_lastExtTime[faderIndex].restart();
     emit faderLevelsChanged();
 }
 
@@ -112,11 +115,19 @@ void EosFaderBankBlock::setFaderLevelFromOsc(int faderIndex, qreal value){
     if (faderIndex < 0 || faderIndex > m_numFaders - 1) return;
     if (m_feedbackInvalid[faderIndex]) return;
 
-    m_faderLevels[faderIndex] = limit(0, value, 1);
+    // by docs eos fader levels are sent 3 seconds after last osc command
+    // sometimes however it seems that there are some glitches
+    if (m_lastOscTime[faderIndex].isValid() && m_lastOscTime[faderIndex].elapsed() < 1500) return;
 
     // asynchronous osc feedback can break sync so give it some time
-    if (abs(value - m_externalLevels[faderIndex]) > 0.04 && m_lastExtTime.elapsed() > 200)
-        m_faderSync[faderIndex] = false;
+    if (m_lastExtTime[faderIndex].isValid() && m_lastExtTime[faderIndex].elapsed() > 200) {
+        if (abs(value - m_externalLevels[faderIndex]) > m_catchThresh)
+            m_faderSync[faderIndex] = false;
+        else
+            m_faderSync[faderIndex] = true;
+    }
+
+    m_faderLevels[faderIndex] = limit(0, value, 1);
 
     emit faderLevelsChanged();
 }
@@ -240,6 +251,13 @@ void EosFaderBankBlock::updateFaderCount() {
     m_externalLevelsValid.resize(m_numFaders.getValue());
     m_faderSync.resize(m_numFaders.getValue());
     m_feedbackInvalid.resize(m_numFaders.getValue());
+    m_lastExtTime.resize(m_numFaders.getValue());
+    m_lastOscTime.resize(m_numFaders.getValue());
+
+    for (auto &tim : m_lastExtTime)
+        tim.invalidate();
+    for (auto &tim : m_lastOscTime)
+        tim.invalidate();
 
     m_page = 1;
     setValue(m_page);
