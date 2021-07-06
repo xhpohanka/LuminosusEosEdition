@@ -59,16 +59,7 @@ MidiEvent MidiEvent::FromRawMessage(QString /*portName*/, const std::vector<unsi
         value = message[2] / 127.;
     }
 
-    // create inputId from status and target:
-
-    QString inputId = "%1%2%3";
-    inputId = inputId.arg(type, 3, 10, QChar('0'));
-    inputId = inputId.arg(channel, 3, 10, QChar('0'));
-    inputId = inputId.arg(target, 3, 10, QChar('0'));
-    //inputId = inputId.arg(portName);
-    // -> don't include port name because it changes by the count of connected devices
-
-    MidiEvent event{inputId, value, type, channel, target, convertedFromNoteOff};
+    MidiEvent event{"", value, type, channel, target, convertedFromNoteOff};
     return event;
 }
 
