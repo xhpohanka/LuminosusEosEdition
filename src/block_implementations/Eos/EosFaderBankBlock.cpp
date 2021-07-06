@@ -21,6 +21,7 @@ EosFaderBankBlock::EosFaderBankBlock(MainController* controller, QString uid)
     , m_lastExtTime(m_numFaders)
     , m_lastOscTime(m_numFaders)
     , m_feedbackEnabled(this, "feedbackEnabled", true)
+    , m_masterPair(this, "masterPair", false)
     , m_catchThresh(3.0/127)
 {
     connect(m_controller->eosManager(), SIGNAL(connectionEstablished()),
@@ -30,9 +31,11 @@ EosFaderBankBlock::EosFaderBankBlock(MainController* controller, QString uid)
     connect(controller->eosManager(), SIGNAL(connectionReset()),
             this, SLOT(onConnectionReset()));
     connect(&m_numFaders, &IntegerAttribute::valueChanged, this, &EosFaderBankBlock::updateFaderCount);
+    connect(&m_masterPair, &BoolAttribute::valueChanged, this, &EosFaderBankBlock::setMasterPair);
     connect(m_controller->midi(), SIGNAL(inputConnected()),
             this, SLOT(onMidiConnected()));
 
+    setMasterPair();
     sendConfigMessage();
 }
 
@@ -258,6 +261,20 @@ int EosFaderBankBlock::getMaxFaderPage() {
         return 100;
     } else {
         return 30;
+    }
+}
+
+void EosFaderBankBlock::setMasterPair() {
+    if (m_masterPair) {
+        m_numFaders = 2;
+        m_bankIndex = QString::number(0);
+
+        updateFaderCount();
+    }
+    else {
+        m_bankIndex = QString::number(m_controller->eosManager()->getNewFaderBankNumber());
+        m_numFaders = 10;
+        updateFaderCount();
     }
 }
 

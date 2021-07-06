@@ -81,6 +81,7 @@ public slots:
     void sendPagePlusEvent();
 
     void updateFaderCount();
+    void setMasterPair();
 
 protected slots:
     void onEosConnectionEstablished();
@@ -93,7 +94,7 @@ private:
     int getMaxFaderPage();
 
 protected:
-    const QString m_bankIndex;
+    QString m_bankIndex;
 
     int m_page;
     int m_eosVersion;
@@ -112,6 +113,8 @@ protected:
     QVector<QElapsedTimer> m_lastExtTime;
     QVector<QElapsedTimer> m_lastOscTime;
     BoolAttribute m_feedbackEnabled;
+    BoolAttribute m_masterPair;
+
     const double m_catchThresh;
 };
 

@@ -42,17 +42,18 @@ BlockBase {
                     width: 80*dp
                     text: "Page:"
                     mappingID: block.getUid() + "pageChange"
+                    visible: block.attr("masterPair").val === false
                 }
                 ButtonBottomLine {
                     width: 30*dp
                     text: "-"
                     onPress: block.sendPageMinusEvent()
                     mappingID: block.getUid() + "pageMinus"
+                    visible: block.attr("masterPair").val === false
                 }
                 NumericInput {
                     width: 40*dp
                     minimumValue: 1
-                    maximumValue: 30
                     maximumValue: 100
                     value: block.page
                     onValueChanged: {
@@ -60,12 +61,14 @@ BlockBase {
                             block.page = value
                         }
                     }
+                    visible: block.attr("masterPair").val === false
                 }
                 ButtonBottomLine {
                     width: 30*dp
                     text: "+"
                     onPress: block.sendPagePlusEvent()
                     mappingID: block.getUid() + "pagePlus"
+                    visible: block.attr("masterPair").val === false
                 }
             }
 
@@ -82,6 +85,18 @@ BlockBase {
             leftMargin: 15*dp
             rightMargin: 15*dp
             defaultSize: 30*dp
+
+            BlockRow {
+                Text {
+                    text: "Master fader pair"
+                    width: parent.width - 30*dp
+                }
+                AttributeCheckbox {
+                    id: masterPair
+                    width: 30*dp
+                    attr: block.attr("masterPair")
+                }
+            }
 
             BlockRow {
                 Text {
@@ -102,6 +117,7 @@ BlockBase {
                     implicitWidth: 0
                     attr: block.attr("numFaders")
                 }
+                visible: block.attr("masterPair").val === false
             }
             BlockRow {
                 Text {
