@@ -21,6 +21,7 @@ EosFaderBankBlock::EosFaderBankBlock(MainController* controller, QString uid)
     , m_lastExtTime(m_numFaders)
     , m_lastOscTime(m_numFaders)
     , m_feedbackEnabled(this, "feedbackEnabled", true)
+    , m_catchThresh(3.0/127)
 {
     connect(m_controller->eosManager(), SIGNAL(connectionEstablished()),
             this, SLOT(onEosConnectionEstablished()));
@@ -79,7 +80,11 @@ void EosFaderBankBlock::setFaderLevel(int faderIndex, qreal value) {
 }
 
 void EosFaderBankBlock::setFaderLevelFromGui(int faderIndex, qreal value) {
-    m_faderSync[faderIndex] = false;
+    if (abs(m_faderLevels[faderIndex] - value) > m_catchThresh)
+        m_faderSync[faderIndex] = false;
+    else
+        m_faderSync[faderIndex] = true;
+
     setFaderLevel(faderIndex, value);
 
     // emitting faderLevelsChanged() not actually neccessary
@@ -87,24 +92,30 @@ void EosFaderBankBlock::setFaderLevelFromGui(int faderIndex, qreal value) {
 }
 
 void EosFaderBankBlock::setFaderLevelFromExt(int faderIndex, qreal value) {
-    const double thresh = 1.0/1024; // we support 10bit resolution at best (mackie control)
+    const double crossThresh = 1.0/1024; // we support 10bit resolution at best (mackie control)
+
     if (m_catchFaders) {
         if (!m_faderSync[faderIndex]) {
             if (m_externalLevelsValid[faderIndex]) {
-                if ((m_externalLevels[faderIndex] <= m_faderLevels[faderIndex] && (value + thresh) >= m_faderLevels[faderIndex])
-                        || (m_externalLevels[faderIndex] >= m_faderLevels[faderIndex] && (value - thresh) <= m_faderLevels[faderIndex]))
+                // if last external value is known check crossing
+                if ((m_externalLevels[faderIndex] <= m_faderLevels[faderIndex] && (value + crossThresh) >= m_faderLevels[faderIndex])
+                        || (m_externalLevels[faderIndex] >= m_faderLevels[faderIndex] && (value - crossThresh) <= m_faderLevels[faderIndex]))
                     m_faderSync[faderIndex] = true;
-            }
-            if (abs(value - m_faderLevels[faderIndex]) < thresh * 2) {
-                m_faderSync[faderIndex] = true;
+            } else {
+                // be more permissive at the start of app
+                // eg. when faders and values starts from zero
+                if (abs(value - m_faderLevels[faderIndex]) < m_catchThresh * 2) {
+                    m_faderSync[faderIndex] = true;
+                }
             }
         }
-        m_externalLevels[faderIndex] = value;
-        m_externalLevelsValid[faderIndex] = true;
 
         if (!m_faderSync[faderIndex])
             return;
     }
+
+    m_externalLevels[faderIndex] = value;
+    m_externalLevelsValid[faderIndex] = true;
 
     setFaderLevel(faderIndex, value);
     m_lastExtTime[faderIndex].restart();

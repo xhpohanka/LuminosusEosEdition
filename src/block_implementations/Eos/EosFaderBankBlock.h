@@ -104,7 +104,7 @@ protected:
     QVector<QString> m_faderLabels;
     QVector<qreal> m_faderLevels;
     QVector<qreal> m_externalLevels;
-    QVector<bool> m_externalLevelsValid;
+    QVector<bool> m_externalLevelsValid; // we have no info about midi fader position at app start
     QVector<bool> m_faderSync;
     QVector<bool> m_feedbackInvalid;
 
@@ -112,6 +112,7 @@ protected:
     QVector<QElapsedTimer> m_lastExtTime;
     QVector<QElapsedTimer> m_lastOscTime;
     BoolAttribute m_feedbackEnabled;
+    const double m_catchThresh;
 };
 
 #endif // EOSFADERBANKBLOCK_H

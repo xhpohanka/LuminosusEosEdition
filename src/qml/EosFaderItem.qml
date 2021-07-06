@@ -60,9 +60,7 @@ StretchColumn {
             }
         }
         onExternalValueChanged: {
-            if (externalValue !== block.faderLevels[index]) {
-                block.setFaderLevelFromExt(index, externalValue)
-            }
+            block.setFaderLevelFromExt(index, externalValue)
         }
         mappingID: block.getUid() + "fader" + modelData
         feedbackEnabled: parent.feedbackEnabled
