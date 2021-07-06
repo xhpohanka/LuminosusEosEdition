@@ -195,6 +195,7 @@ void EosFaderBankBlock::onEosConnectionEstablished() {
 void EosFaderBankBlock::onMidiConnected() {
     m_faderSync.fill(false);
     m_externalLevelsValid.fill(false);
+    sendConfigMessage();
 }
 
 void EosFaderBankBlock::sendConfigMessage() {
