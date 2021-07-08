@@ -10,6 +10,11 @@ StretchColumn {
 
     property int index
     property bool feedbackEnabled: true
+    property bool ledState: false
+
+    onLedStateChanged: {
+        controller.midiMapping().sendFeedback(fireButton.mappingID, ledState ? 1.0 : 0.0)
+    }
 
     function is_gm(s) {
         var patt = /^GM( \(BO\))?/;
@@ -90,6 +95,7 @@ StretchColumn {
         }
     }
     PushButton {
+        id: fireButton
         implicitHeight: 0  // do not stretch
         height: 40*dp
         toggle: grandmaster

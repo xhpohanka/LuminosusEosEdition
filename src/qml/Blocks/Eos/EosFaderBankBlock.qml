@@ -10,6 +10,25 @@ BlockBase {
     height: 400*dp
     settingsComponent: settings
 
+    Timer {
+        interval: 200
+        running: true
+        repeat: true
+        property bool state: true
+        onTriggered: {
+            for (var i = 0; i < block.attr("numFaders").val; i++) {
+                if (!block.faderSync[i]) {
+                    if (faderRepeater.itemAt(i).ledState !== state)
+                        faderRepeater.itemAt(i).ledState = state
+                }
+                else {
+                    if (faderRepeater.itemAt(i).ledState !== false)
+                        faderRepeater.itemAt(i).ledState = false
+                }
+            }
+            state = !state
+        }
+    }
 
     StretchColumn {
         anchors.fill: parent
