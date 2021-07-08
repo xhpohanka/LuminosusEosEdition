@@ -21,6 +21,11 @@ StretchColumn {
         return patt.test(s)
     }
 
+    function is_bo(s) {
+        var patt = /^GM \(BO\)/;
+        return patt.test(s)
+    }
+
     property bool grandmaster: is_gm(block.faderLabels[index])
 
     Text {
@@ -29,6 +34,12 @@ StretchColumn {
         horizontalAlignment: Text.AlignHCenter
         fontSizeMode: Text.Fit
         color: (text[0] === "S") ? "lightgreen" : "white"
+        onTextChanged: {
+            if (is_bo(text))
+                controller.midiMapping().sendFeedback(fireButton.mappingID, 1.0)
+            else
+                controller.midiMapping().sendFeedback(fireButton.mappingID, 0.0)
+        }
     }
     PushButton {
         implicitHeight: 0  // do not stretch
@@ -99,10 +110,11 @@ StretchColumn {
         implicitHeight: 0  // do not stretch
         height: 40*dp
         toggle: grandmaster
+        extEnabled: (grandmaster && stopButton.active) || !grandmaster
+        active: is_bo()
         onActiveChanged: {
             if (grandmaster) {
-                if (stopButton.active)
-                    block.sendBlEvent(1)
+                block.sendBlEvent(1)
             }
             else {
                 block.sendFireEvent(index, active)

@@ -18,6 +18,8 @@ CustomTouchArea {
 	property bool marked: false
 	property string text: ""
     property bool showLed: true
+        property bool feedbackEnabled: true
+        property bool extEnabled: true
 
 	// emitted when active changes to true
 	signal press
@@ -135,12 +137,18 @@ CustomTouchArea {
     property real externalInput: -1
     Component.onCompleted: controller.midiMapping().registerGuiControl(this, mappingID)
     Component.onDestruction: if (controller) controller.midiMapping().unregisterGuiControl(mappingID)
-	onExternalInputChanged: {
-		if (externalInput > 0.) {
-			handleTouchDown()
-		} else {
-			handleTouchUp()
-		}
-    }
-    onActiveChanged: controller.midiMapping().sendFeedback(mappingID, active ? 1.0 : 0.0)
+        onExternalInputChanged: {
+            if (extEnabled) {
+                if (externalInput > 0.) {
+                    handleTouchDown()
+                } else {
+                    handleTouchUp()
+                }
+            }
+        }
+        onActiveChanged: {
+            if (feedbackEnabled) {
+                controller.midiMapping().sendFeedback(mappingID, active ? 1.0 : 0.0)
+            }
+        }
 }
