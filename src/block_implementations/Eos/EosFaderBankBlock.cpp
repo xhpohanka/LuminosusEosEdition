@@ -83,10 +83,12 @@ void EosFaderBankBlock::setFaderLevel(int faderIndex, qreal value) {
 }
 
 void EosFaderBankBlock::setFaderLevelFromGui(int faderIndex, qreal value) {
-    if (abs(m_faderLevels[faderIndex] - value) > m_catchThresh)
-        m_faderSync[faderIndex] = false;
-    else
-        m_faderSync[faderIndex] = true;
+    if (m_externalLevelsValid[faderIndex]) {
+        if (abs(m_externalLevels[faderIndex] - value) > m_catchThresh)
+            m_faderSync[faderIndex] = false;
+        else
+            m_faderSync[faderIndex] = true;
+    }
 
     setFaderLevel(faderIndex, value);
 
@@ -135,10 +137,12 @@ void EosFaderBankBlock::setFaderLevelFromOsc(int faderIndex, qreal value){
 
     // asynchronous osc feedback can break sync so give it some time
     if (m_lastExtTime[faderIndex].isValid() && m_lastExtTime[faderIndex].elapsed() > 200) {
-        if (abs(value - m_externalLevels[faderIndex]) > m_catchThresh)
-            m_faderSync[faderIndex] = false;
-        else
-            m_faderSync[faderIndex] = true;
+        if (m_externalLevelsValid[faderIndex]) {
+            if (abs(value - m_externalLevels[faderIndex]) > m_catchThresh)
+                m_faderSync[faderIndex] = false;
+            else
+                m_faderSync[faderIndex] = true;
+        }
     }
 
     m_faderLevels[faderIndex] = limit(0, value, 1);
