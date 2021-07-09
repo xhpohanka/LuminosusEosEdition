@@ -11,10 +11,13 @@ BlockBase {
     settingsComponent: settings
 
     Timer {
+        id: blinkTimer
         interval: 200
-        running: true
+        running: false
         repeat: true
         property bool state: true
+        property bool stopRequest: false
+
         onTriggered: {
             for (var i = 0; i < block.attr("numFaders").val; i++) {
                 if (!block.faderSync[i]) {
@@ -26,6 +29,14 @@ BlockBase {
                         faderRepeater.itemAt(i).ledState = false
                 }
             }
+
+            // we need to stop when leds are off
+            if (stopRequest && state == false) {
+                running = false
+                stopRequest = false
+                state = true
+            }
+
             state = !state
         }
     }
@@ -125,6 +136,12 @@ BlockBase {
                 AttributeCheckbox {
                     width: 30*dp
                     attr: block.attr("catchFaders")
+                    onActiveChanged: {
+                        if (active)
+                            blinkTimer.running = true
+                        else
+                            blinkTimer.stopRequest = true
+                    }
                 }
             }
             BlockRow {
